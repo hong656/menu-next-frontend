@@ -127,7 +127,7 @@ export default function CartPage() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => router.push('/screen')}
+            onClick={() => router.back()}
             className="mr-3"
           >
             <ArrowLeft className="h-5 w-5" />

@@ -241,21 +241,43 @@ const FloatingCartButton: React.FC<{
 
 export function MenuScreen() {
     const [activeCategory, setActiveCategory] = useState("All");
-    const [cartItems, setCartItems] = useState<CartItem[]>([]);
-    const [cartCount, setCartCount] = useState(0);
 
-    // Load cart from localStorage on component mount
-    useEffect(() => {
-      const savedCart = localStorage.getItem('restaurant-cart');
-      if (savedCart) {
-        const parsedCart = JSON.parse(savedCart);
-        setCartItems(parsedCart.items || []);
-        setCartCount(parsedCart.count || 0);
-      }
-    }, []);
+    // FIX: Initialize state by reading from localStorage directly.
+    // This function runs only once on the initial render.
+    const [cartItems, setCartItems] = useState<CartItem[]>(() => {
+        // Check if window is defined to prevent errors during server-side rendering
+        if (typeof window === 'undefined') {
+            return [];
+        }
+        try {
+            const savedCart = localStorage.getItem('restaurant-cart');
+            return savedCart ? JSON.parse(savedCart).items || [] : [];
+        } catch (error) {
+            console.error("Failed to parse cart from localStorage", error);
+            return [];
+        }
+    });
 
-    // Save cart to localStorage whenever it changes
+    const [cartCount, setCartCount] = useState<number>(() => {
+        if (typeof window === 'undefined') {
+            return 0;
+        }
+        try {
+            const savedCart = localStorage.getItem('restaurant-cart');
+            return savedCart ? JSON.parse(savedCart).count || 0 : 0;
+        } catch (error) {
+            console.error("Failed to parse cart count from localStorage", error);
+            return 0;
+        }
+    });
+
+    // FIX: REMOVED the initial `useEffect` that was reading from localStorage.
+    // It's no longer necessary because `useState` is now handling the initial load.
+
+    // This `useEffect` now ONLY handles saving the state to localStorage when it changes.
     useEffect(() => {
+      // It won't run with the initial empty state anymore,
+      // because the state is initialized with the correct data from the start.
       localStorage.setItem('restaurant-cart', JSON.stringify({
         items: cartItems,
         count: cartCount
