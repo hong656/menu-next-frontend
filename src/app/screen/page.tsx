@@ -12,6 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import { Drawer, DrawerContent, DrawerFooter, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import { VisuallyHidden } from "@/components/ui/visually-hidden";
+import StatusDialog from '@/components/ui/status-dialog';
 import {
   Search,
   Soup,
@@ -100,9 +101,11 @@ const MenuItemCard: React.FC<{
   item: MenuItem;
   onAddToCart: (item: MenuItem, quantity: number) => void;
 }> = ({ item, onAddToCart }) => {
+  const router = useRouter();
   const [quantity, setQuantity] = useState(1);
   const [isOpen, setIsOpen] = useState(false);
   const [cartCount, setCartCount] = useState(0);
+  const [isItemAddedDialogOpen, setIsItemAddedDialogOpen] = useState(false);
 
   // Load cart count from localStorage
   useEffect(() => {
@@ -189,12 +192,33 @@ const MenuItemCard: React.FC<{
                 className="cursor-pointer flex-1 bg-teal-500 hover:bg-teal-600 text-white h-12 rounded-r-3xl"
                 onClick={() => {
                   onAddToCart(item, quantity);
-                  setIsOpen(false);
+                  setIsItemAddedDialogOpen(true);
                 }}
               >
                 Add to Cart
                 <CirclePlus className="!w-5 !h-5 ml-1" />
               </Button>
+              <StatusDialog
+                open={isItemAddedDialogOpen}
+                onOpenChange={setIsItemAddedDialogOpen}
+                title="Item added to cart"
+                description="" // You can add a description if you want
+                icon="itemAdded"
+                onPrimaryAction={() => {
+                  setIsItemAddedDialogOpen(false); // Just close the dialog
+                }}
+                primaryActionText="Okay"
+                onSecondaryAction={() => {
+                  setIsItemAddedDialogOpen(false); // Close dialog and navigate
+                  router.push('/cart'); // Navigate to your cart page
+                }}
+                secondaryActionText={
+                  <div className="flex items-center justify-center gap-2">
+                    <ShoppingCart className="!w-4 !h-4" />
+                    View Cart
+                  </div>
+                }
+              />
             </div>
           </DrawerFooter>
         </div>

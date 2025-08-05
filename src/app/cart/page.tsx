@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/ui/header";
 import { ArrowLeft, Plus, Minus, Send } from "lucide-react";
+import StatusDialog from "@/components/ui/status-dialog";
 
 interface CartItem {
   id: string;
@@ -20,6 +21,7 @@ export default function CartPage() {
   const router = useRouter();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [total, setTotal] = useState(0);
+  const [isOrderPlacedDialogOpen, setIsOrderPlacedDialogOpen] = useState(false);
 
   // Load cart from localStorage
   useEffect(() => {
@@ -102,7 +104,6 @@ export default function CartPage() {
   const handlePlaceOrder = () => {
     // Here you would typically send the order to your backend
     console.log('Placing order:', { items: cartItems, total });
-    alert('Order placed! Cart will be cleared.'); // Debug alert
     
     // Clear cart after order
     setCartItems([]);
@@ -112,8 +113,14 @@ export default function CartPage() {
     // Dispatch custom event to notify other components about cart update
     window.dispatchEvent(new Event('cartUpdated'));
     
-    // Redirect to confirmation or menu page
-    router.push('/screen');
+    // Open the "Order placed" dialog
+    setIsOrderPlacedDialogOpen(true);
+  };
+
+  // This function is called when the user clicks "Okay" in the dialog
+  const handleDialogOkay = () => {
+    setIsOrderPlacedDialogOpen(false);
+    router.push('/screen'); // Navigate to the main menu screen
   };
 
   return (
@@ -218,6 +225,17 @@ export default function CartPage() {
           </Button>
         )}
       </div>
+
+      {/* Render the StatusDialog component here */}
+      <StatusDialog
+        open={isOrderPlacedDialogOpen}
+        onOpenChange={setIsOrderPlacedDialogOpen}
+        title="Order placed"
+        description="" // You can customize this message
+        icon="orderPlaced"
+        onPrimaryAction={handleDialogOkay}
+        primaryActionText="Okay"
+      />
     </div>
   );
-} 
+}
