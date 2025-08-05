@@ -172,10 +172,10 @@ export default function CartPage() {
                     <Button
                       size="icon"
                       variant="outline"
-                      className="w-8 h-8 rounded-full bg-gray-100 border-gray-200 hover:bg-gray-200"
+                      className="hover:bg-gray-900 cursor-pointer w-8 h-8 rounded-l-3xl bg-gray-900/30 border-gray-200"
                       onClick={() => updateQuantity(item.id, item.quantity - 1)}
                     >
-                      <Minus className="h-3 w-3" />
+                      <Minus className="!h-5 !w-5 text-white" />
                     </Button>
                     
                     <div className="w-12 h-8 bg-white border border-gray-300 rounded-md flex items-center justify-center">
@@ -185,10 +185,10 @@ export default function CartPage() {
                     <Button
                       size="icon"
                       variant="outline"
-                      className="w-8 h-8 rounded-full bg-gray-100 border-gray-200 hover:bg-gray-200"
+                      className="hover:bg-gray-800 cursor-pointer w-8 h-8 rounded-r-3xl bg-gray-900/30 border-gray-200"
                       onClick={() => updateQuantity(item.id, item.quantity + 1)}
                     >
-                      <Plus className="h-3 w-3" />
+                      <Plus className="!h-5 !w-5 text-white"/>
                     </Button>
                   </div>
                 </div>

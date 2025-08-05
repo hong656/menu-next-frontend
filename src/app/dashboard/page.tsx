@@ -104,19 +104,19 @@ const initialStats: OrderStats = {
 
 // Component for the Header section
 const DashboardHeader = ({ currentTime }: { currentTime: Date }) => (
-    <header className="flex items-center justify-between p-4 border-b bg-white">
+    <header className="flex items-center justify-between p-4 border-b bg-teal-600">
         <div className="flex items-center space-x-3">
-            <UtensilsCrossed className="h-6 w-6 text-teal-600" />
-            <h1 className="text-xl font-bold text-gray-800">Order Dashboard</h1>
+            <UtensilsCrossed className="!h-6 !w-6 text-white" />
+            <h1 className="text-xl font-bold text-white">Order Dashboard</h1>
         </div>
-        <div className="flex items-center space-x-4 rounded-lg bg-gray-100 px-4 py-2">
-             <span className="font-medium text-gray-600">
+        <div className="flex items-center space-x-4 rounded-lg px-4 py-2">
+             <span className="font-medium text-white">
                 {currentTime.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </span>
             <span className="w-px h-5 bg-gray-300"></span>
             <div className="flex items-center space-x-2">
-                <Clock className="h-5 w-5 text-gray-500" />
-                <span className="font-semibold text-gray-800">
+                <Clock className="h-5 w-5 text-white" />
+                <span className="font-semibold text-white">
                     {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
                 </span>
             </div>
@@ -126,7 +126,7 @@ const DashboardHeader = ({ currentTime }: { currentTime: Date }) => (
 
 // Component for the stat cards (Pending, Total, Completed)
 const StatCard = ({ title, value }: { title: string, value: number | string }) => (
-    <Card className="bg-gray-100/80 border-gray-200 shadow-sm">
+    <Card className="bg-gray-500/35 border-gray-200 shadow-sm">
         <CardHeader className="p-4">
             <CardTitle className="text-sm font-medium text-gray-500">{title}</CardTitle>
             <p className="text-3xl font-bold text-gray-900">{value}</p>
@@ -149,7 +149,7 @@ const OrderListItem = ({ order, isSelected, onSelect }: { order: Order; isSelect
             className={cn(
                 "p-4 rounded-lg border-l-4 cursor-pointer transition-all duration-200 relative",
                 isSelected
-                    ? "bg-teal-500 text-white shadow-lg border-teal-700"
+                    ? "bg-teal-600 text-white shadow-lg border-teal-700"
                     : "bg-white hover:bg-gray-50 border-transparent",
                 order.status === 'completed' && !isSelected && "bg-green-50",
                 order.status === 'rejected' && !isSelected && "bg-red-50",
@@ -246,7 +246,7 @@ const OrderDetail = ({ order, onUpdateStatus }: { order: Order | null; onUpdateS
                     <div className="grid grid-cols-2 gap-3">
                         <Button
                             size="lg"
-                            className="bg-teal-600 hover:bg-teal-700 text-white font-bold py-6 text-lg"
+                            className="cursor-pointer bg-teal-600 text-white font-bold py-6 text-lg"
                             onClick={handleAcceptOrder}
                         >
                             ACCEPT ORDER
