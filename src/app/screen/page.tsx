@@ -23,8 +23,8 @@ import {
   Minus,
   CirclePlus,
 } from "lucide-react";
+import Autoplay from "embla-carousel-autoplay";
 
-// Interface for the data structure used within the application
 interface MenuItem {
   id: string;
   name: string;
@@ -53,6 +53,7 @@ interface CartItem {
   price: number;
   quantity: number;
   totalPrice: number;
+  image: string;
 }
 
 // --- MOCK DATA FOR CAROUSEL ---
@@ -256,6 +257,19 @@ const FloatingCartButton: React.FC<{
   );
 };
 
+const TableTokenHandler: React.FC = () => {
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const tableToken = searchParams.get('t');
+    if (tableToken) {
+      localStorage.setItem('tableToken', tableToken);
+    }
+  }, [searchParams]);
+
+  return null;
+};
+
 // --- MENU SCREEN COMPONENT ---
 
 export function MenuScreen() {
@@ -361,7 +375,7 @@ export function MenuScreen() {
                 : cartItem
             );
           } else {
-            return [...prevItems, { id: item.id, name: item.name, price: item.price, quantity: quantity, totalPrice: item.price * quantity }];
+            return [...prevItems, { id: item.id, name: item.name, price: item.price, quantity: quantity, totalPrice: item.price * quantity, image: item.image }];
           }
         });
         
@@ -459,10 +473,11 @@ export default function Screen() {
     <div className="w-full flex flex-col min-h-screen bg-white overflow-x-hidden">
       <React.Suspense fallback={<div>Loading...</div>}>
         <Header />
+        <TableTokenHandler />
       </React.Suspense>
 
       <div className="w-full max-w-md mx-auto px-2 md:max-w-2xl lg:max-w-4xl xl:max-w-7xl">
-        <Carousel>
+        <Carousel plugins={[Autoplay({ delay: 5000 })]}>
           <CarouselContent>
             {carouselImages.map((img, index) => (
               <CarouselItem key={index}>
