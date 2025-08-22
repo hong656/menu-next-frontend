@@ -274,6 +274,8 @@ const TableTokenHandler: React.FC = () => {
 
 export function MenuScreen() {
     const [activeCategory, setActiveCategory] = useState("All");
+        const [searchQuery, setSearchQuery] = useState("");
+    const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
     const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
     const [categories, setCategories] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -356,13 +358,23 @@ export function MenuScreen() {
         fetchMenuItems();
     }, []);
 
-    useEffect(() => {
+        useEffect(() => {
       localStorage.setItem('restaurant-cart', JSON.stringify({
         items: cartItems,
         count: cartCount
       }));
       window.dispatchEvent(new Event('cartUpdated'));
     }, [cartItems, cartCount]);
+
+    useEffect(() => {
+      const timerId = setTimeout(() => {
+        setDebouncedSearchQuery(searchQuery);
+      }, 500);
+
+      return () => {
+        clearTimeout(timerId);
+      };
+    }, [searchQuery]);
 
     const handleAddToCart = (item: MenuItem, quantity: number) => {
         setCartItems(prevItems => {
@@ -416,16 +428,24 @@ export function MenuScreen() {
       return cartItems.reduce((sum, item) => sum + item.totalPrice, 0);
     };
     
-    const filteredMenuItems = activeCategory === "All"
-        ? menuItems
-        : menuItems.filter(item => item.category === activeCategory);
+            const filteredMenuItems = menuItems.filter(item => {
+      const categoryMatch = activeCategory === "All" || item.category === activeCategory;
+      if (!debouncedSearchQuery) return categoryMatch;
+      const searchMatch = item.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) || item.description.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
+      return categoryMatch && searchMatch;
+    });
 
     return (
       <div className="relative bg-gray-50 font-sans w-full max-w-md mx-auto border-2 border-gray-200 rounded-3xl shadow-2xl mt-4 md:max-w-2xl lg:max-w-4xl xl:max-w-7xl">
           <main className="px-4 pb-28">
               <div className="sticky top-0 z-20 bg-gray-50 pt-4 pb-2">
                 <div className="relative mb-2">
-                  <Input placeholder="Search Menu" className="h-11 bg-white border-gray-300 rounded-3xl" />
+                                    <Input
+                    placeholder="Search Menu"
+                    className="h-11 bg-white border-gray-300 rounded-3xl"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
                   <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                 </div>
                 <div className="flex space-x-3 overflow-x-auto pb-2 -mx-4 px-4 hide-scrollbar">
