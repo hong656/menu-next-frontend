@@ -10,7 +10,6 @@ import Header from "@/components/ui/header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import { Drawer, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
-import { VisuallyHidden } from "@/components/ui/visually-hidden";
 import StatusDialog from '@/components/ui/status-dialog';
 import {
   Search,
@@ -140,12 +139,12 @@ const MenuItemCard: React.FC<{
             <p className="text-sm text-gray-500">{item.description}</p>
           </div>
           <div className="flex flex-col items-center space-y-2">
-            <p className="font-semibold text-md">${item.price.toFixed(2)}</p>
+            <p className="font-semibold text-md w-20 text-center">${item.price.toFixed(2)}</p>
             <Button
               size="icon"
-              className=" cursor-pointer bg-teal-500 hover:bg-teal-600 text-white rounded-full w-10 h-10 flex items-center justify-center z-10"
+              className="cursor-pointer bg-teal-500 hover:bg-teal-600 text-white rounded-full w-10 h-10 flex items-center justify-center z-10"
               onClick={(e) => {
-                e.stopPropagation(); // Prevent opening the drawer
+                e.stopPropagation();
                 onAddToCart(item, 1);
               }}
             >
@@ -440,7 +439,7 @@ export function MenuScreen() {
           <main className="px-4 pb-28">
               <div className="sticky top-0 z-20 bg-gray-50 pt-4 pb-2">
                 <div className="relative mb-2">
-                                    <Input
+                  <Input
                     placeholder="Search Menu"
                     className="h-11 bg-white border-gray-300 rounded-3xl"
                     value={searchQuery}

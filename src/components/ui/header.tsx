@@ -52,7 +52,7 @@ export default function Header() {
               </div>
               <div className="flex items-center space-x-3">
                 <span 
-                  className="rounded-full cursor-pointer hover:bg-teal-500 bg-teal-500/20 inline-flex items-center justify-center text-sm font-medium text-green-700 ring-1 ring-green-600/20 ring-inset w-24 px-2 h-10"
+                  className="rounded-full duration-300 cursor-pointer hover:bg-teal-500 bg-teal-500/20 inline-flex items-center justify-center text-sm font-medium text-green-700 ring-1 ring-green-600/20 ring-inset w-24 px-2 h-10"
                   onClick={() => router.push('/cart')}
                 >
                   <ShoppingCart className="h-4 w-4 mr-1.5" />
