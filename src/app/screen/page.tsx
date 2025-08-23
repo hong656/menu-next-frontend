@@ -9,8 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import Header from "@/components/ui/header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
-import { Drawer, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
-import StatusDialog from '@/components/ui/status-dialog';
+import StatusDialog from '@/components/ui/status-dialog'; // Kept for the "View Cart" popup
 import {
   Search,
   Soup,
@@ -33,7 +32,6 @@ interface MenuItem {
   image: string;
 }
 
-// Interface for the raw data structure from the API
 interface ApiMenuItem {
     id: number;
     name: string;
@@ -55,175 +53,71 @@ interface CartItem {
   image: string;
 }
 
-// --- MOCK DATA FOR CAROUSEL ---
-const carouselImages = [
-  { src: "/image/green.jpeg" },
-  { src: "/image/green.jpeg" },
-  { src: "/image/green.jpeg" },
-];
-
-
-// --- HELPER & CHILD COMPONENTS ---
-
-function QuantityStepper({ onQuantityChange }: { onQuantityChange: (q: number) => void }) {
-  const [quantity, setQuantity] = useState(1);
-
-  const handleDecrement = () => {
-    const newQuantity = Math.max(1, quantity - 1);
-    setQuantity(newQuantity);
-    onQuantityChange(newQuantity);
-  };
-
-  const handleIncrement = () => {
-    const newQuantity = quantity + 1;
-    setQuantity(newQuantity);
-    onQuantityChange(newQuantity);
-  };
-
-  return (
-    <div className="flex items-center justify-center space-x-1">
-      <Button size="icon" className="cursor-pointer rounded-l-3xl w-9 h-8 bg-gray-900/30" onClick={handleDecrement}><Minus className="!h-5 !w-5" /></Button>
-      <span className="pt-0.5 border-gray-900/30 rounded-md item-center border w-12 h-8 font-bold text-gray-600 text-md text-center">{quantity}</span>
-      <Button size="icon" className="cursor-pointer rounded-r-3xl w-9 h-8 bg-gray-900/30" onClick={handleIncrement}><Plus className="!h-5 !w-5" /></Button>
-    </div>
-  );
+interface Banner {
+  id: number;
+  bannerImage: string;
+  title: string;
 }
+
+
+// --- REFACTORED MENU ITEM CARD COMPONENT ---
 
 const MenuItemCard: React.FC<{
   item: MenuItem;
+  quantity: number; // Current quantity in cart
   onAddToCart: (item: MenuItem, quantity: number) => void;
-}> = ({ item, onAddToCart }) => {
-  const router = useRouter();
-  const [quantity, setQuantity] = useState(1);
-  const [isOpen, setIsOpen] = useState(false);
-  const [cartCount, setCartCount] = useState(0);
-  const [isItemAddedDialogOpen, setIsItemAddedDialogOpen] = useState(false);
-
-  // Load cart count from localStorage
-  useEffect(() => {
-    const savedCart = localStorage.getItem('restaurant-cart');
-    if (savedCart) {
-      const parsedCart = JSON.parse(savedCart);
-      setCartCount(parsedCart.count || 0);
-    }
-
-    // Listen for cart updates
-    const handleCartUpdate = () => {
-      const savedCart = localStorage.getItem('restaurant-cart');
-      if (savedCart) {
-        const parsedCart = JSON.parse(savedCart);
-        setCartCount(parsedCart.count || 0);
-      } else {
-        setCartCount(0);
-      }
-    };
-
-    window.addEventListener('cartUpdated', handleCartUpdate);
-    window.addEventListener('storage', handleCartUpdate);
-
-    return () => {
-      window.removeEventListener('cartUpdated', handleCartUpdate);
-      window.removeEventListener('storage', handleCartUpdate);
-    };
-  }, []);
+  onUpdateQuantity: (itemId: string, newQuantity: number) => void;
+}> = ({ item, quantity, onAddToCart, onUpdateQuantity }) => {
 
   return (
-    <Drawer open={isOpen} onOpenChange={setIsOpen}>
-      <DrawerTrigger asChild>
-        <div className="flex items-center space-x-4 p-2 rounded-lg transition-colors hover:bg-gray-100 cursor-pointer">
-          <div className="w-20 h-20 bg-gray-300 rounded-lg flex-shrink-0 overflow-hidden">
-            <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-          </div>
-          <div className="flex-grow">
-            <h3 className="font-bold text-lg">{item.name}</h3>
-            <p className="text-sm text-gray-500">{item.description}</p>
-          </div>
-          <div className="flex flex-col items-center space-y-2">
-            <p className="font-semibold text-md w-20 text-center">${item.price.toFixed(2)}</p>
+    <div className="border shadow-lg flex items-center space-x-4 p-2 rounded-lg transition-colors hover:bg-gray-100">
+      <div className="w-20 h-20 bg-gray-300 rounded-lg flex-shrink-0 overflow-hidden">
+        <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+      </div>
+      <div className="flex-grow">
+        <h3 className="font-bold text-lg">{item.name}</h3>
+        <p className="text-sm text-gray-500">{item.description}</p>
+      </div>
+
+      <div className="flex flex-col items-center justify-between space-y-2" style={{ minHeight: '5.5rem' }}>
+        <p className="font-semibold text-md w-20 text-center">${item.price.toFixed(2)}</p>
+        
+        {quantity === 0 ? (
+          <Button
+            size="icon"
+            className="cursor-pointer bg-teal-500 hover:bg-teal-600 text-white rounded-full w-10 h-10 flex items-center justify-center z-10"
+            onClick={() => onAddToCart(item, 1)}
+          >
+            <CirclePlus className="!w-6 !h-6" />
+          </Button>
+        ) : (
+          <div className="flex items-center justify-center space-x-1">
             <Button
               size="icon"
-              className="cursor-pointer bg-teal-500 hover:bg-teal-600 text-white rounded-full w-10 h-10 flex items-center justify-center z-10"
-              onClick={(e) => {
-                e.stopPropagation();
-                onAddToCart(item, 1);
-              }}
+              className="cursor-pointer rounded-l-full w-9 h-9 bg-gray-900/30 text-white"
+              onClick={() => onUpdateQuantity(item.id, quantity - 1)}
             >
-              <CirclePlus className="!w-6 !h-6" />
+              <Minus className="!h-5 !w-5" />
+            </Button>
+            <span className="flex items-center justify-center w-8 h-9 font-bold text-gray-700 text-md">
+              {quantity}
+            </span>
+            <Button
+              size="icon"
+              className="cursor-pointer rounded-r-full w-9 h-9 bg-gray-900/30 text-white"
+              onClick={() => onUpdateQuantity(item.id, quantity + 1)}
+            >
+              <Plus className="!h-5 !w-5" />
             </Button>
           </div>
-        </div>
-      </DrawerTrigger>
-      <DrawerContent className="p-0">
-        <div className="mx-auto w-full max-w-sm">
-          <DrawerHeader>
-            <DrawerTitle>{item.name}</DrawerTitle>
-            <DrawerDescription>{item.description}</DrawerDescription>
-          </DrawerHeader>
-          <div className="px-4">
-            <div className="flex items-center justify-center">
-              <div className="bg-gray-200 rounded-lg overflow-hidden" style={{ height: "225px", width: "225px" }}>
-                <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-              </div>
-            </div>
-            <div className="border-1 rounded-xl p-2 border-gray-400 mt-2 flex justify-between items-start">
-              <div>
-                <p className="font-semibold text-md text-black text-teal-500">${item.price.toFixed(2)}</p>
-              </div>
-              <QuantityStepper onQuantityChange={setQuantity} />
-            </div>
-          </div>
-          <DrawerFooter className="px-4 pt-2 pb-40">
-            <div className="flex items-center space-x-1">
-              <Button variant="outline" className="hover:text-green-700 border-teal-500/20 border-1 rounded-l-3xl cursor-pointer hover:bg-teal-500 bg-teal-500/20 inline-flex items-center justify-center text-sm font-medium text-green-700 ring-1 ring-green-600/20 ring-inset w-26 px-2 h-12">
-                <ShoppingCart className="!w-5 !h-5" />
-                Cart
-                {cartCount > 0 && (
-                  <Badge variant="destructive" className="h-5 min-w-5 rounded-full px-1 font-mono tabular-nums flex items-center justify-center">
-                    {cartCount}
-                  </Badge>
-                )}
-              </Button>
-              <Button
-                className="cursor-pointer flex-1 bg-teal-500 hover:bg-teal-600 text-white h-12 rounded-r-3xl"
-                onClick={() => {
-                  onAddToCart(item, quantity);
-                  setIsItemAddedDialogOpen(true);
-                }}
-              >
-                Add to Cart
-                <CirclePlus className="!w-5 !h-5 ml-1" />
-              </Button>
-              <StatusDialog
-                open={isItemAddedDialogOpen}
-                onOpenChange={setIsItemAddedDialogOpen}
-                title="Item added to cart"
-                description=""
-                icon="itemAdded"
-                onPrimaryAction={() => {
-                  setIsItemAddedDialogOpen(false);
-                }}
-                primaryActionText="Okay"
-                onSecondaryAction={() => {
-                  setIsItemAddedDialogOpen(false);
-                  router.push('/cart');
-                }}
-                secondaryActionText={
-                  <div className="flex items-center justify-center gap-2">
-                    <ShoppingCart className="!w-4 !h-4" />
-                    View Cart
-                  </div>
-                }
-              />
-            </div>
-          </DrawerFooter>
-        </div>
-      </DrawerContent>
-    </Drawer>
+        )}
+      </div>
+    </div>
   );
 };
 
 
-
+// --- FLOATING CART BUTTON (Unchanged) ---
 const FloatingCartButton: React.FC<{
   count: number; 
   total: number;
@@ -256,40 +150,35 @@ const FloatingCartButton: React.FC<{
   );
 };
 
+// --- Table Token Handler (Unchanged) ---
 const TableTokenHandler: React.FC = () => {
   const searchParams = useSearchParams();
-
   useEffect(() => {
     const tableToken = searchParams.get('t');
     if (tableToken) {
       localStorage.setItem('tableToken', tableToken);
     }
   }, [searchParams]);
-
   return null;
 };
 
-// --- MENU SCREEN COMPONENT ---
 
+// --- MENU SCREEN COMPONENT (Updated Logic) ---
 export function MenuScreen() {
     const [activeCategory, setActiveCategory] = useState("All");
-        const [searchQuery, setSearchQuery] = useState("");
+    const [searchQuery, setSearchQuery] = useState("");
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
     const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
     const [categories, setCategories] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     
-    // State for cart logic, initialized from localStorage to persist cart
     const [cartItems, setCartItems] = useState<CartItem[]>(() => {
         if (typeof window === 'undefined') return [];
         try {
             const savedCart = localStorage.getItem('restaurant-cart');
             return savedCart ? JSON.parse(savedCart).items || [] : [];
-        } catch (error) {
-            console.error("Failed to parse cart from localStorage", error);
-            return [];
-        }
+        } catch (error) { console.error("Failed to parse cart from localStorage", error); return []; }
     });
 
     const [cartCount, setCartCount] = useState<number>(() => {
@@ -297,101 +186,53 @@ export function MenuScreen() {
         try {
             const savedCart = localStorage.getItem('restaurant-cart');
             return savedCart ? JSON.parse(savedCart).count || 0 : 0;
-        } catch (error) {
-            console.error("Failed to parse cart count from localStorage", error);
-            return 0;
-        }
+        } catch (error) { console.error("Failed to parse cart count from localStorage", error); return 0; }
     });
     
-    // Fetch menu items from API on component mount
     useEffect(() => {
         const fetchMenuItems = async () => {
             const API_URL = process.env.NEXT_PUBLIC_API_URL;
             if (!API_URL) {
-                setError("API URL is not configured. Please set NEXT_PUBLIC_API_URL.");
+                setError("API URL is not configured.");
                 setLoading(false);
                 return;
             }
-
             try {
                 const response = await fetch(`${API_URL}/api/public/menu-items`);
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch menu items: ${response.statusText}`);
-                }
+                if (!response.ok) throw new Error(`Failed to fetch menu items: ${response.statusText}`);
                 const data: ApiMenuItem[] = await response.json();
 
                 const formattedMenuItems = data.map(item => ({
-                    id: item.id.toString(),
-                    name: item.name,
-                    description: item.description,
-                    price: item.priceCents / 100, 
-                    category: item.type || "Uncategorized", 
+                    id: item.id.toString(), name: item.name, description: item.description,
+                    price: item.priceCents / 100, category: item.type || "Uncategorized", 
                     image: `${API_URL}${item.imageUrl}`, 
                 }));
                 setMenuItems(formattedMenuItems);
 
                 const categoryIconMap: { [key: string]: React.ElementType } = {
-                    "Hot pot": Soup,
-                    "Size Dish": Spline,
-                    "Drink": GlassWater,
-                    "Vegetarian": Leaf,
+                    "Hot pot": Soup, "Size Dish": Spline, "Drink": GlassWater, "Vegetarian": Leaf,
                 };
                 const uniqueCategoryNames = [...new Set(formattedMenuItems.map(item => item.category))];
                 const dynamicCategories = [
                   { name: "All", icon: null },
-                  ...uniqueCategoryNames.map(name => ({
-                    name,
-                    icon: categoryIconMap[name] || null
-                  }))
+                  ...uniqueCategoryNames.map(name => ({ name, icon: categoryIconMap[name] || null }))
                 ];
                 setCategories(dynamicCategories);
-
-            } catch (err: any) {
-                setError(err.message);
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
+            } catch (err: any) { setError(err.message); console.error(err);
+            } finally { setLoading(false); }
         };
-
         fetchMenuItems();
     }, []);
 
-        useEffect(() => {
-      localStorage.setItem('restaurant-cart', JSON.stringify({
-        items: cartItems,
-        count: cartCount
-      }));
+    useEffect(() => {
+      localStorage.setItem('restaurant-cart', JSON.stringify({ items: cartItems, count: cartCount }));
       window.dispatchEvent(new Event('cartUpdated'));
     }, [cartItems, cartCount]);
 
     useEffect(() => {
-      const timerId = setTimeout(() => {
-        setDebouncedSearchQuery(searchQuery);
-      }, 500);
-
-      return () => {
-        clearTimeout(timerId);
-      };
+      const timerId = setTimeout(() => { setDebouncedSearchQuery(searchQuery); }, 500);
+      return () => { clearTimeout(timerId); };
     }, [searchQuery]);
-
-    const handleAddToCart = (item: MenuItem, quantity: number) => {
-        setCartItems(prevItems => {
-          const existingItem = prevItems.find(cartItem => cartItem.id === item.id);
-          
-          if (existingItem) {
-            return prevItems.map(cartItem =>
-              cartItem.id === item.id
-                ? { ...cartItem, quantity: cartItem.quantity + quantity, totalPrice: (cartItem.quantity + quantity) * cartItem.price }
-                : cartItem
-            );
-          } else {
-            return [...prevItems, { id: item.id, name: item.name, price: item.price, quantity: quantity, totalPrice: item.price * quantity, image: item.image }];
-          }
-        });
-        
-        setCartCount(prev => prev + quantity);
-    };
 
     const removeFromCart = (itemId: string) => {
       setCartItems(prevItems => {
@@ -411,23 +252,34 @@ export function MenuScreen() {
       
       setCartItems(prevItems => {
         const updatedItems = prevItems.map(item =>
-          item.id === itemId
-            ? { ...item, quantity: newQuantity, totalPrice: item.price * newQuantity }
-            : item
+          item.id === itemId ? { ...item, quantity: newQuantity, totalPrice: item.price * newQuantity } : item
         );
-        
         const newCount = updatedItems.reduce((sum, item) => sum + item.quantity, 0);
         setCartCount(newCount);
-        
         return updatedItems;
       });
+    };
+
+    const handleAddToCart = (item: MenuItem, quantity: number) => {
+        setCartItems(prevItems => {
+          const existingItem = prevItems.find(cartItem => cartItem.id === item.id);
+          if (existingItem) {
+            // This case is now handled by updateQuantity, but kept as a fallback
+            return prevItems.map(cartItem =>
+              cartItem.id === item.id ? { ...cartItem, quantity: cartItem.quantity + quantity, totalPrice: (cartItem.quantity + quantity) * cartItem.price } : cartItem
+            );
+          } else {
+            return [...prevItems, { id: item.id, name: item.name, price: item.price, quantity: quantity, totalPrice: item.price * quantity, image: item.image }];
+          }
+        });
+        setCartCount(prev => prev + quantity);
     };
 
     const getCartTotal = () => {
       return cartItems.reduce((sum, item) => sum + item.totalPrice, 0);
     };
     
-            const filteredMenuItems = menuItems.filter(item => {
+    const filteredMenuItems = menuItems.filter(item => {
       const categoryMatch = activeCategory === "All" || item.category === activeCategory;
       if (!debouncedSearchQuery) return categoryMatch;
       const searchMatch = item.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) || item.description.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
@@ -466,13 +318,20 @@ export function MenuScreen() {
                   {error && <p className="text-red-500">Error: {error}</p>}
                   {!loading && !error && (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-4">
-                        {filteredMenuItems.map((item) => (
-                            <MenuItemCard
-                                key={item.id}
-                                item={item}
-                                onAddToCart={handleAddToCart}
-                            />
-                        ))}
+                        {filteredMenuItems.map((item) => {
+                            const cartItem = cartItems.find(ci => ci.id === item.id);
+                            const quantityInCart = cartItem ? cartItem.quantity : 0;
+
+                            return (
+                                <MenuItemCard
+                                    key={item.id}
+                                    item={item}
+                                    quantity={quantityInCart}
+                                    onAddToCart={handleAddToCart}
+                                    onUpdateQuantity={updateQuantity}
+                                />
+                            );
+                        })}
                     </div>
                   )}
               </section>
@@ -485,9 +344,39 @@ export function MenuScreen() {
     );
 }
 
-// --- MAIN PAGE COMPONENT ---
-
+// --- MAIN PAGE COMPONENT (Unchanged) ---
 export default function Screen() {
+  const [banners, setBanners] = useState<Banner[]>([]);
+  const [loadingBanners, setLoadingBanners] = useState(true);
+  const [errorBanners, setErrorBanners] = useState<string | null>(null);
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+  useEffect(() => {
+    if (!API_URL) {
+      setErrorBanners("API URL is not configured.");
+      setLoadingBanners(false);
+      return;
+    }
+
+    const fetchBanners = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/public/banners`);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch banners: ${response.statusText}`);
+        }
+        const data: Banner[] = await response.json();
+        setBanners(data);
+      } catch (err: any) {
+        setErrorBanners(err.message);
+        console.error(err);
+      } finally {
+        setLoadingBanners(false);
+      }
+    };
+
+    fetchBanners();
+  }, [API_URL]);
+
   return (
     <div className="w-full flex flex-col min-h-screen bg-white overflow-x-hidden">
       <React.Suspense fallback={<div>Loading...</div>}>
@@ -498,13 +387,31 @@ export default function Screen() {
       <div className="w-full max-w-md mx-auto px-2 md:max-w-2xl lg:max-w-4xl xl:max-w-7xl">
         <Carousel plugins={[Autoplay({ delay: 5000 })]}>
           <CarouselContent>
-            {carouselImages.map((img, index) => (
-              <CarouselItem key={index}>
+            {loadingBanners && (
+              <CarouselItem>
+                <Card className="p-0 border-0">
+                  <CardContent className="p-0 h-52 md:h-96 flex items-center justify-center">
+                    <p>Loading banners...</p>
+                  </CardContent>
+                </Card>
+              </CarouselItem>
+            )}
+            {errorBanners && (
+              <CarouselItem>
+                <Card className="p-0 border-0">
+                  <CardContent className="p-0 h-52 md:h-96 flex items-center justify-center">
+                    <p className="text-red-500">Error: {errorBanners}</p>
+                  </CardContent>
+                </Card>
+              </CarouselItem>
+            )}
+            {!loadingBanners && !errorBanners && banners.map((banner) => (
+              <CarouselItem key={banner.id}>
                 <Card className="p-0 border-0">
                   <CardContent className="p-0 h-52 md:h-96 flex items-center justify-center">
                     <img
-                      src={img.src}
-                      alt="Promotion"
+                      src={`${API_URL}${banner.bannerImage}`}
+                      alt={banner.title}
                       className="w-full h-full object-cover"
                     />
                   </CardContent>
