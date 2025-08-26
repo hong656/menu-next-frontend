@@ -181,14 +181,6 @@ export function MenuScreen() {
         } catch (error) { console.error("Failed to parse cart from localStorage", error); return []; }
     });
 
-    const [cartCount, setCartCount] = useState<number>(() => {
-        if (typeof window === 'undefined') return 0;
-        try {
-            const savedCart = localStorage.getItem('restaurant-cart');
-            return savedCart ? JSON.parse(savedCart).count || 0 : 0;
-        } catch (error) { console.error("Failed to parse cart count from localStorage", error); return 0; }
-    });
-    
     useEffect(() => {
         const fetchMenuItems = async () => {
             const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -225,9 +217,10 @@ export function MenuScreen() {
     }, []);
 
     useEffect(() => {
+      const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
       localStorage.setItem('restaurant-cart', JSON.stringify({ items: cartItems, count: cartCount }));
       window.dispatchEvent(new Event('cartUpdated'));
-    }, [cartItems, cartCount]);
+    }, [cartItems]);
 
     useEffect(() => {
       const timerId = setTimeout(() => { setDebouncedSearchQuery(searchQuery); }, 500);
@@ -235,13 +228,7 @@ export function MenuScreen() {
     }, [searchQuery]);
 
     const removeFromCart = (itemId: string) => {
-      setCartItems(prevItems => {
-        const itemToRemove = prevItems.find(item => item.id === itemId);
-        if (itemToRemove) {
-          setCartCount(prev => prev - itemToRemove.quantity);
-        }
-        return prevItems.filter(item => item.id !== itemId);
-      });
+      setCartItems(prevItems => prevItems.filter(item => item.id !== itemId));
     };
 
     const updateQuantity = (itemId: string, newQuantity: number) => {
@@ -250,14 +237,11 @@ export function MenuScreen() {
         return;
       }
       
-      setCartItems(prevItems => {
-        const updatedItems = prevItems.map(item =>
+      setCartItems(prevItems => 
+        prevItems.map(item =>
           item.id === itemId ? { ...item, quantity: newQuantity, totalPrice: item.price * newQuantity } : item
-        );
-        const newCount = updatedItems.reduce((sum, item) => sum + item.quantity, 0);
-        setCartCount(newCount);
-        return updatedItems;
-      });
+        )
+      );
     };
 
     const handleAddToCart = (item: MenuItem, quantity: number) => {
@@ -272,7 +256,6 @@ export function MenuScreen() {
             return [...prevItems, { id: item.id, name: item.name, price: item.price, quantity: quantity, totalPrice: item.price * quantity, image: item.image }];
           }
         });
-        setCartCount(prev => prev + quantity);
     };
 
     const getCartTotal = () => {
@@ -285,6 +268,8 @@ export function MenuScreen() {
       const searchMatch = item.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) || item.description.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
       return categoryMatch && searchMatch;
     });
+
+    const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
     return (
       <div className="relative bg-gray-50 font-sans w-full max-w-md mx-auto border-2 border-gray-200 rounded-3xl shadow-2xl mt-4 md:max-w-2xl lg:max-w-4xl xl:max-w-7xl">
