@@ -190,7 +190,7 @@ export default function CartPage() {
               <p className="text-gray-500 text-lg">Your cart is empty</p>
               <Button 
                 onClick={() => router.push('/screen')}
-                className="mt-4 bg-teal-500 hover:bg-teal-600 text-white"
+                className="mt-4 bg-[var(--main-theme)] hover:bg-[var(--main-theme)]/90 text-white"
               >
                 Browse Menu
               </Button>

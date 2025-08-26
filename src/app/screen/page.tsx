@@ -85,7 +85,7 @@ const MenuItemCard: React.FC<{
         {quantity === 0 ? (
           <Button
             size="icon"
-            className="cursor-pointer bg-teal-500 hover:bg-teal-600 text-white rounded-full w-10 h-10 flex items-center justify-center z-10"
+            className="cursor-pointer bg-[var(--main-theme)] hover:bg-[var(--main-theme)]/90 text-white rounded-full w-10 h-10 flex items-center justify-center z-10"
             onClick={() => onAddToCart(item, 1)}
           >
             <CirclePlus className="!w-6 !h-6" />
@@ -127,7 +127,7 @@ const FloatingCartButton: React.FC<{
   return (
     <div className="fixed bottom-8 right-8 z-20">
       <Button 
-        className="bg-teal-500 hover:bg-teal-600 cursor-pointer text-white rounded-2xl h-20 w-20 shadow-lg flex items-center justify-center relative"
+        className="bg-[var(--main-theme)] hover:bg-[var(--main-theme)]/90 cursor-pointer text-white rounded-2xl h-20 w-20 shadow-lg flex items-center justify-center relative"
         onClick={() => router.push('/cart')}
       >
         <div className="flex flex-col items-center">
@@ -290,7 +290,7 @@ export function MenuScreen() {
                       key={name}
                       variant={activeCategory === name ? "default" : "outline"}
                       onClick={() => setActiveCategory(name)}
-                      className={`cursor-pointer flex-shrink-0 h-11 rounded-full px-5 space-x-2 transition-all duration-200 ${activeCategory === name ? "bg-teal-500 text-white hover:bg-teal-600" : "bg-gray-300 border-gray-200 text-black hover:bg-teal-600/40"}`}
+                      className={`cursor-pointer flex-shrink-0 h-11 rounded-full px-5 space-x-2 transition-all duration-200 ${activeCategory === name ? "bg-[var(--main-theme)] text-white hover:brightness-90" : "bg-gray-300 border-gray-200 text-black hover:bg-[var(--main-theme)]/40"}`}
                     >
                       {Icon && <Icon className="w-5 h-5" />}
                       <span className="font-semibold">{name}</span>
