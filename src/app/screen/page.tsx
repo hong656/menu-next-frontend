@@ -44,6 +44,16 @@ interface ApiMenuItem {
     updatedAt: string;
 }
 
+// --- NEW INTERFACE FOR MENU TYPES ---
+interface ApiMenuType {
+    id: number;
+    name: string;
+    status: number;
+    createdAt: string;
+    updatedAt: string;
+}
+
+
 interface CartItem {
   id: string;
   name: string;
@@ -60,7 +70,7 @@ interface Banner {
 }
 
 
-// --- REFACTORED MENU ITEM CARD COMPONENT ---
+// --- REFACTORED MENU ITEM CARD COMPONENT (Unchanged) ---
 
 const MenuItemCard: React.FC<{
   item: MenuItem;
@@ -116,8 +126,6 @@ const MenuItemCard: React.FC<{
   );
 };
 
-
-// --- FLOATING CART BUTTON (Unchanged) ---
 const FloatingCartButton: React.FC<{
   count: number; 
   total: number;
@@ -162,10 +170,10 @@ const TableTokenHandler: React.FC = () => {
   return null;
 };
 
-
 // --- MENU SCREEN COMPONENT (Updated Logic) ---
 export function MenuScreen() {
     const [activeCategory, setActiveCategory] = useState("All");
+    const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
     const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -182,7 +190,7 @@ export function MenuScreen() {
     });
 
     useEffect(() => {
-        const fetchMenuItems = async () => {
+        const fetchMenuData = async () => {
             const API_URL = process.env.NEXT_PUBLIC_API_URL;
             if (!API_URL) {
                 setError("API URL is not configured.");
@@ -190,11 +198,18 @@ export function MenuScreen() {
                 return;
             }
             try {
-                const response = await fetch(`${API_URL}/api/public/menu-items`);
-                if (!response.ok) throw new Error(`Failed to fetch menu items: ${response.statusText}`);
-                const data: ApiMenuItem[] = await response.json();
+                const [menuItemsResponse, menuTypesResponse] = await Promise.all([
+                    fetch(`${API_URL}/api/public/menu-items`),
+                    fetch(`${API_URL}/api/public/menu-types`)
+                ]);
 
-                const formattedMenuItems = data.map(item => ({
+                if (!menuItemsResponse.ok) throw new Error(`Failed to fetch menu items: ${menuItemsResponse.statusText}`);
+                if (!menuTypesResponse.ok) throw new Error(`Failed to fetch menu types: ${menuTypesResponse.statusText}`);
+                
+                const menuItemsData: ApiMenuItem[] = await menuItemsResponse.json();
+                const menuTypesData: ApiMenuType[] = await menuTypesResponse.json();
+
+                const formattedMenuItems = menuItemsData.map(item => ({
                     id: item.id.toString(), name: item.name, description: item.description,
                     price: item.priceCents / 100, category: item.type || "Uncategorized", 
                     image: `${API_URL}${item.imageUrl}`, 
@@ -204,16 +219,28 @@ export function MenuScreen() {
                 const categoryIconMap: { [key: string]: React.ElementType } = {
                     "Hot pot": Soup, "Size Dish": Spline, "Drink": GlassWater, "Vegetarian": Leaf,
                 };
-                const uniqueCategoryNames = [...new Set(formattedMenuItems.map(item => item.category))];
+
                 const dynamicCategories = [
-                  { name: "All", icon: null },
-                  ...uniqueCategoryNames.map(name => ({ name, icon: categoryIconMap[name] || null }))
+                  { id: null, name: "All", icon: null },
+                  ...menuTypesData
+                    .filter(type => type.status === 1)
+                    .map(type => ({
+                      id: type.id,
+                      name: type.name,
+                      icon: categoryIconMap[type.name] || null
+                    }))
                 ];
                 setCategories(dynamicCategories);
-            } catch (err: any) { setError(err.message); console.error(err);
-            } finally { setLoading(false); }
+
+            } catch (err: any) { 
+                setError(err.message); 
+                console.error(err);
+            } finally { 
+                setLoading(false); 
+            }
         };
-        fetchMenuItems();
+
+        fetchMenuData();
     }, []);
 
     useEffect(() => {
@@ -226,6 +253,55 @@ export function MenuScreen() {
       const timerId = setTimeout(() => { setDebouncedSearchQuery(searchQuery); }, 500);
       return () => { clearTimeout(timerId); };
     }, [searchQuery]);
+
+    useEffect(() => {
+      const fetchFilteredMenuItems = async () => {
+          const API_URL = process.env.NEXT_PUBLIC_API_URL;
+          if (!API_URL) {
+              setError("API URL is not configured.");
+              return;
+          }
+
+          setLoading(true);
+
+          const params = new URLSearchParams();
+          if (debouncedSearchQuery) {
+              params.append('search', debouncedSearchQuery);
+          }
+          if (activeCategoryId !== null) {
+              params.append('menuTypeId', activeCategoryId.toString());
+          }
+
+          const queryString = params.toString();
+          const requestUrl = `${API_URL}/api/public/menu-items${queryString ? `?${queryString}` : ''}`;
+          
+          try {
+              const response = await fetch(requestUrl);
+              if (!response.ok) {
+                  throw new Error(`Failed to fetch menu items: ${response.statusText}`);
+              }
+              // You'll need to update your ApiMenuItem interface as well
+              const data: any[] = await response.json(); // Using `any` for a quick fix, see below for proper interface
+              const formattedMenuItems = data.map(item => ({
+                  id: item.id.toString(),
+                  name: item.name,
+                  description: item.description,
+                  price: item.priceCents / 100,
+                  // --- THIS IS THE CORRECTED LINE ---
+                  category: item.menuType?.name || "Uncategorized",
+                  image: `${API_URL}${item.imageUrl}`,
+              }));
+              setMenuItems(formattedMenuItems);
+          } catch (err: any) {
+              setError(err.message);
+              console.error(err);
+          } finally {
+              setLoading(false);
+          }
+      };
+
+      fetchFilteredMenuItems();
+    }, [debouncedSearchQuery, activeCategoryId]);
 
     const removeFromCart = (itemId: string) => {
       setCartItems(prevItems => prevItems.filter(item => item.id !== itemId));
@@ -285,11 +361,14 @@ export function MenuScreen() {
                   <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                 </div>
                 <div className="flex space-x-3 overflow-x-auto pb-2 -mx-4 px-4 hide-scrollbar">
-                  {categories.map(({ name, icon: Icon }) => (
+                  {categories.map(({ id, name, icon: Icon }) => (
                     <Button
                       key={name}
-                      variant={activeCategory === name ? "default" : "outline"}
-                      onClick={() => setActiveCategory(name)}
+                      variant={activeCategoryId === id ? "default" : "outline"}
+                      onClick={() => {
+                        setActiveCategory(name);
+                        setActiveCategoryId(id);
+                      }}
                       className={`cursor-pointer flex-shrink-0 h-11 rounded-full px-5 space-x-2 transition-all duration-200 ${activeCategory === name ? "bg-[var(--main-theme)] text-white hover:brightness-90" : "bg-gray-300 border-gray-200 text-black hover:bg-[var(--main-theme)]/40"}`}
                     >
                       {Icon && <Icon className="w-5 h-5" />}
@@ -329,7 +408,6 @@ export function MenuScreen() {
     );
 }
 
-// --- MAIN PAGE COMPONENT (Unchanged) ---
 export default function Screen() {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [loadingBanners, setLoadingBanners] = useState(true);
@@ -363,14 +441,17 @@ export default function Screen() {
   }, [API_URL]);
 
   return (
-    <div className="w-full flex flex-col min-h-screen bg-white overflow-x-hidden">
+    <div className=" w-full flex flex-col min-h-screen bg-white overflow-hidden">
       <React.Suspense fallback={<div>Loading...</div>}>
         <Header />
         <TableTokenHandler />
       </React.Suspense>
 
-      <div className="w-full max-w-md mx-auto px-2 md:max-w-2xl lg:max-w-4xl xl:max-w-7xl">
-        <Carousel plugins={[Autoplay({ delay: 5000 })]}>
+      <div className=" w-full max-w-md mx-auto px-2 md:max-w-2xl lg:max-w-4xl xl:max-w-7xl">
+        <Carousel 
+          plugins={[Autoplay({ delay: 3000 })]}
+          opts={{ loop: true }}
+        >
           <CarouselContent>
             {loadingBanners && (
               <CarouselItem>
@@ -392,12 +473,12 @@ export default function Screen() {
             )}
             {!loadingBanners && !errorBanners && banners.map((banner) => (
               <CarouselItem key={banner.id}>
-                <Card className="p-0 border-0">
+                <Card className="p-0 border-0 rounded-xl overflow-hidden">
                   <CardContent className="p-0 h-52 md:h-96 flex items-center justify-center">
                     <img
                       src={`${API_URL}${banner.bannerImage}`}
                       alt={banner.title}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover rounded-xl"
                     />
                   </CardContent>
                 </Card>
