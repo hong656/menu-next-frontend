@@ -22,6 +22,13 @@ import {
   CirclePlus,
 } from "lucide-react";
 import Autoplay from "embla-carousel-autoplay";
+import { useLocale, useTranslations } from 'next-intl';
+
+interface ApiMenuItemTranslation {
+  languageCode: string;
+  name: string;
+  description: string;
+}
 
 interface MenuItem {
   id: string;
@@ -34,17 +41,13 @@ interface MenuItem {
 
 interface ApiMenuItem {
     id: number;
-    name: string;
-    type: string;
-    description: string;
+    menuType: { id: number; name: string; };
     priceCents: number;
     imageUrl: string;
     status: number;
-    createdAt: string;
-    updatedAt: string;
+    translations: ApiMenuItemTranslation[];
 }
 
-// --- NEW INTERFACE FOR MENU TYPES ---
 interface ApiMenuType {
     id: number;
     name: string;
@@ -69,12 +72,9 @@ interface Banner {
   title: string;
 }
 
-
-// --- REFACTORED MENU ITEM CARD COMPONENT (Unchanged) ---
-
 const MenuItemCard: React.FC<{
   item: MenuItem;
-  quantity: number; // Current quantity in cart
+  quantity: number;
   onAddToCart: (item: MenuItem, quantity: number) => void;
   onUpdateQuantity: (itemId: string, newQuantity: number) => void;
 }> = ({ item, quantity, onAddToCart, onUpdateQuantity }) => {
@@ -158,7 +158,6 @@ const FloatingCartButton: React.FC<{
   );
 };
 
-// --- Table Token Handler (Unchanged) ---
 const TableTokenHandler: React.FC = () => {
   const searchParams = useSearchParams();
   useEffect(() => {
@@ -170,8 +169,32 @@ const TableTokenHandler: React.FC = () => {
   return null;
 };
 
-// --- MENU SCREEN COMPONENT (Updated Logic) ---
+const formatApiMenuItems = (items: ApiMenuItem[], locale: string, apiUrl: string): MenuItem[] => {
+    return items.map(item => {
+        let translation = item.translations.find(t => t.languageCode === locale);
+
+        if (!translation) {
+            translation = item.translations.find(t => t.languageCode === 'en');
+        }
+
+        if (!translation) {
+            translation = item.translations[0] || { name: 'Name not available', description: '' };
+        }
+
+        return {
+            id: item.id.toString(),
+            name: translation.name,
+            description: translation.description,
+            price: item.priceCents / 100,
+            category: item.menuType?.name || "Uncategorized", 
+            image: `${apiUrl}${item.imageUrl}`, 
+        };
+    });
+};
+
 export function MenuScreen() {
+
+    const locale = useLocale()
     const [activeCategory, setActiveCategory] = useState("All");
     const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
@@ -190,57 +213,30 @@ export function MenuScreen() {
     });
 
     useEffect(() => {
-        const fetchMenuData = async () => {
-            const API_URL = process.env.NEXT_PUBLIC_API_URL;
-            if (!API_URL) {
-                setError("API URL is not configured.");
-                setLoading(false);
-                return;
-            }
-            try {
-                const [menuItemsResponse, menuTypesResponse] = await Promise.all([
-                    fetch(`${API_URL}/api/public/menu-items`),
-                    fetch(`${API_URL}/api/public/menu-types`)
-                ]);
+        const fetchCategories = async () => {
+          const API_URL = process.env.NEXT_PUBLIC_API_URL;
+          if (!API_URL) return;
+          try {
+              const menuTypesResponse = await fetch(`${API_URL}/api/public/menu-types`);
+              if (!menuTypesResponse.ok) throw new Error(`Failed to fetch menu types`);
+              
+              const menuTypesData: ApiMenuType[] = await menuTypesResponse.json();
 
-                if (!menuItemsResponse.ok) throw new Error(`Failed to fetch menu items: ${menuItemsResponse.statusText}`);
-                if (!menuTypesResponse.ok) throw new Error(`Failed to fetch menu types: ${menuTypesResponse.statusText}`);
-                
-                const menuItemsData: ApiMenuItem[] = await menuItemsResponse.json();
-                const menuTypesData: ApiMenuType[] = await menuTypesResponse.json();
-
-                const formattedMenuItems = menuItemsData.map(item => ({
-                    id: item.id.toString(), name: item.name, description: item.description,
-                    price: item.priceCents / 100, category: item.type || "Uncategorized", 
-                    image: `${API_URL}${item.imageUrl}`, 
-                }));
-                setMenuItems(formattedMenuItems);
-
-                const categoryIconMap: { [key: string]: React.ElementType } = {
-                    "Hot pot": Soup, "Size Dish": Spline, "Drink": GlassWater, "Vegetarian": Leaf,
-                };
-
-                const dynamicCategories = [
-                  { id: null, name: "All", icon: null },
-                  ...menuTypesData
-                    .filter(type => type.status === 1)
-                    .map(type => ({
-                      id: type.id,
-                      name: type.name,
-                      icon: categoryIconMap[type.name] || null
-                    }))
-                ];
-                setCategories(dynamicCategories);
-
-            } catch (err: any) { 
-                setError(err.message); 
-                console.error(err);
-            } finally { 
-                setLoading(false); 
-            }
+              const categoryIconMap: { [key: string]: React.ElementType } = {
+                  "Hot pot": Soup, "Size Dish": Spline, "Drink": GlassWater, "Vegetarian": Leaf,
+              };
+              const dynamicCategories = [
+                { id: null, name: "All", icon: null },
+                ...menuTypesData
+                  .filter(type => type.status === 1)
+                  .map(type => ({ id: type.id, name: type.name, icon: categoryIconMap[type.name] || null }))
+              ];
+              setCategories(dynamicCategories);
+          } catch (err: any) { 
+              setError(err.message); 
+          }
         };
-
-        fetchMenuData();
+        fetchCategories();
     }, []);
 
     useEffect(() => {
@@ -263,7 +259,6 @@ export function MenuScreen() {
           }
 
           setLoading(true);
-
           const params = new URLSearchParams();
           if (debouncedSearchQuery) {
               params.append('search', debouncedSearchQuery);
@@ -272,36 +267,27 @@ export function MenuScreen() {
               params.append('menuTypeId', activeCategoryId.toString());
           }
 
-          const queryString = params.toString();
-          const requestUrl = `${API_URL}/api/public/menu-items${queryString ? `?${queryString}` : ''}`;
+          const requestUrl = `${API_URL}/api/public/menu-items?${params.toString()}`;
           
           try {
               const response = await fetch(requestUrl);
-              if (!response.ok) {
-                  throw new Error(`Failed to fetch menu items: ${response.statusText}`);
-              }
-              // You'll need to update your ApiMenuItem interface as well
-              const data: any[] = await response.json(); // Using `any` for a quick fix, see below for proper interface
-              const formattedMenuItems = data.map(item => ({
-                  id: item.id.toString(),
-                  name: item.name,
-                  description: item.description,
-                  price: item.priceCents / 100,
-                  // --- THIS IS THE CORRECTED LINE ---
-                  category: item.menuType?.name || "Uncategorized",
-                  image: `${API_URL}${item.imageUrl}`,
-              }));
-              setMenuItems(formattedMenuItems);
+              if (!response.ok) throw new Error(`Failed to fetch menu items: ${response.statusText}`);
+              
+              const data: ApiMenuItem[] = await response.json();
+              
+              // Use our helper to process translations based on the current locale
+              const formattedItems = formatApiMenuItems(data, locale, API_URL);
+              setMenuItems(formattedItems);
+
           } catch (err: any) {
               setError(err.message);
-              console.error(err);
           } finally {
               setLoading(false);
           }
       };
 
       fetchFilteredMenuItems();
-    }, [debouncedSearchQuery, activeCategoryId]);
+    }, [debouncedSearchQuery, activeCategoryId, locale]);
 
     const removeFromCart = (itemId: string) => {
       setCartItems(prevItems => prevItems.filter(item => item.id !== itemId));
@@ -382,20 +368,19 @@ export function MenuScreen() {
                   {error && <p className="text-red-500">Error: {error}</p>}
                   {!loading && !error && (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-4">
-                        {filteredMenuItems.map((item) => {
-                            const cartItem = cartItems.find(ci => ci.id === item.id);
-                            const quantityInCart = cartItem ? cartItem.quantity : 0;
-
-                            return (
-                                <MenuItemCard
-                                    key={item.id}
-                                    item={item}
-                                    quantity={quantityInCart}
-                                    onAddToCart={handleAddToCart}
-                                    onUpdateQuantity={updateQuantity}
-                                />
-                            );
-                        })}
+                      {menuItems.map((item) => {
+                        const cartItem = cartItems.find(ci => ci.id === item.id);
+                        const quantityInCart = cartItem ? cartItem.quantity : 0;
+                        return (
+                            <MenuItemCard
+                                key={item.id}
+                                item={item}
+                                quantity={quantityInCart}
+                                onAddToCart={handleAddToCart}
+                                onUpdateQuantity={updateQuantity}
+                            />
+                        );
+                      })}
                     </div>
                   )}
               </section>

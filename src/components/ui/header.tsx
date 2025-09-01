@@ -7,6 +7,7 @@ import {
 import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import LocaleSwitcher from '../button-lan';
 
 // Define a type for the setting object
 interface WebSetting {
@@ -22,17 +23,11 @@ export default function Header() {
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
-  // --- CHANGE #1: New useEffect to set the theme globally ---
-  // This effect watches the themeColor state. When it changes,
-  // it applies the color as a CSS variable to the entire <html> document.
   useEffect(() => {
     document.documentElement.style.setProperty('--main-theme', themeColor);
   }, [themeColor]);
 
-
-  // This useEffect now handles all data fetching and state updates
   useEffect(() => {
-    // Immediately check localStorage on mount to prevent color flash
     const savedTheme = localStorage.getItem('main_theme');
     if (savedTheme) {
       setThemeColor(savedTheme);
@@ -70,7 +65,6 @@ export default function Header() {
       setCartCount(JSON.parse(savedCart).count || 0);
     }
 
-    // This function handles updates from other tabs/windows
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === 'restaurant-cart') {
         const savedCart = localStorage.getItem('restaurant-cart');
@@ -84,7 +78,6 @@ export default function Header() {
       }
     };
     
-    // This custom event handles updates within the same tab
     const handleCartUpdate = () => {
         const savedCart = localStorage.getItem('restaurant-cart');
         setCartCount(savedCart ? JSON.parse(savedCart).count || 0 : 0);
@@ -100,7 +93,6 @@ export default function Header() {
   }, [apiUrl]);
 
   return (
-    // --- CHANGE #2: Remove the style prop from here ---
     <header>
       <nav>
         <div className="mx-auto max-w-7xl px-2">
@@ -110,8 +102,8 @@ export default function Header() {
                 <img src={logoUrl} alt="Emily Restaurant" className="h-8 w-auto" />
               </div>
               <div className="flex items-center space-x-3">
+                <LocaleSwitcher />
                 <span
-                  // This class will now work perfectly
                   className="rounded-full duration-500 cursor-pointer bg-[var(--main-theme)]/20 hover:bg-[var(--main-theme)]/60 inline-flex items-center justify-center text-sm font-medium text-[var(--main-theme)] ring-1 ring-[var(--main-theme)]/20 ring-inset w-24 px-2 h-10 hover:text-white "
                   onClick={() => router.push('/cart')}
                 >
