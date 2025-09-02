@@ -16,11 +16,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import {Languages, Check, Loader2} from 'lucide-react';
 
-type Locale = 'en' | 'kh';
+type Locale = 'en' | 'kh' | 'ch';
 
 const LOCALES: {value: Locale; label: string;}[] = [
   {value: 'en', label: 'English'},
-  {value: 'kh', label: 'ភាសាខ្មែរ'}
+  {value: 'kh', label: 'ភាសាខ្មែរ'},
+  {value: 'ch', label: '中文'}
 ];
 
 export default function LocaleSwitcher() {
@@ -44,7 +45,7 @@ export default function LocaleSwitcher() {
         <Button
           variant="outline"
           size="sm"
-          className="h-9 px-3 gap-2" // aligns nicely with your header
+          className="h-9 px-3 gap-2"
         >
           {pending ? (
             <Loader2 className="h-4 w-4 animate-spin" />

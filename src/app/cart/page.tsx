@@ -8,6 +8,7 @@ import Header from "@/components/ui/header";
 import { ArrowLeft, Plus, Minus, Send, Loader2, ShoppingCart, Trash2 } from "lucide-react";
 import StatusDialog from "@/components/ui/status-dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { useTranslations } from 'next-intl';
 
 interface CartItem {
   id: string;
@@ -20,6 +21,7 @@ interface CartItem {
 
 export default function CartPage() {
   const router = useRouter();
+  const t = useTranslations('Header');
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [total, setTotal] = useState(0);
   const [remark, setRemark] = useState(""); // State for the remark/notes
@@ -112,7 +114,7 @@ export default function CartPage() {
     }
 
     const orderItems = cartItems.map(item => ({
-      menuItemId: parseInt(item.id, 10), // Convert string ID to number
+      menuItemId: parseInt(item.id, 10),
       quantity: item.quantity,
     }));
 
@@ -166,7 +168,7 @@ export default function CartPage() {
             <Button variant="ghost" size="icon" onClick={() => router.back()} className="mr-3">
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <h1 className="text-2xl font-bold text-gray-900">Cart</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t('cart')}</h1>
           </div>
 
           {cartItems.length > 0 && (
