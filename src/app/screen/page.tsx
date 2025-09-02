@@ -24,6 +24,11 @@ import {
 import Autoplay from "embla-carousel-autoplay";
 import { useLocale, useTranslations } from 'next-intl';
 
+interface ApiMenuTypeTranslation {
+  languageCode: string;
+  name: string;
+}
+
 interface ApiMenuItemTranslation {
   languageCode: string;
   name: string;
@@ -50,10 +55,8 @@ interface ApiMenuItem {
 
 interface ApiMenuType {
     id: number;
-    name: string;
     status: number;
-    createdAt: string;
-    updatedAt: string;
+    translations: ApiMenuTypeTranslation[];
 }
 
 
@@ -131,7 +134,7 @@ const FloatingCartButton: React.FC<{
   total: number;
 }> = ({ count, total }) => {
   const router = useRouter();
-  
+  const t = useTranslations('Header');
   return (
     <div className="fixed bottom-8 right-8 z-20">
       <Button 
@@ -140,7 +143,7 @@ const FloatingCartButton: React.FC<{
       >
         <div className="flex flex-col items-center">
           <ShoppingCart className="!w-7 !h-7"/>
-          <span className="text-sm font-medium mt-1">Cart</span>
+          <span className="text-sm font-medium mt-1">{t('cart')}</span>
           {total > 0 && (
             <span className="text-xs font-bold">${total.toFixed(2)}</span>
           )}
@@ -194,7 +197,7 @@ const formatApiMenuItems = (items: ApiMenuItem[], locale: string, apiUrl: string
 
 export function MenuScreen() {
 
-    const locale = useLocale()
+    const locale = useLocale();
     const [activeCategory, setActiveCategory] = useState("All");
     const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
@@ -225,11 +228,27 @@ export function MenuScreen() {
               const categoryIconMap: { [key: string]: React.ElementType } = {
                   "Hot pot": Soup, "Size Dish": Spline, "Drink": GlassWater, "Vegetarian": Leaf,
               };
+
               const dynamicCategories = [
                 { id: null, name: "All", icon: null },
                 ...menuTypesData
                   .filter(type => type.status === 1)
-                  .map(type => ({ id: type.id, name: type.name, icon: categoryIconMap[type.name] || null }))
+                  .map(type => {
+                    let translation = type.translations.find(t => t.languageCode === locale);
+                    if (!translation) {
+                        translation = type.translations.find(t => t.languageCode === 'en');
+                    }
+                    
+                    const displayName = translation ? translation.name : `Category #${type.id}`;
+
+                    const englishName = type.translations.find(t => t.languageCode === 'en')?.name || "";
+
+                    return { 
+                      id: type.id,
+                      name: displayName,
+                      icon: categoryIconMap[englishName] || null
+                    };
+                  })
               ];
               setCategories(dynamicCategories);
           } catch (err: any) { 
@@ -237,7 +256,7 @@ export function MenuScreen() {
           }
         };
         fetchCategories();
-    }, []);
+    }, [locale]);
 
     useEffect(() => {
       const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);

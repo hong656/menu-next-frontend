@@ -8,6 +8,7 @@ import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import LocaleSwitcher from '../button-lan';
+import { useTranslations } from 'next-intl';
 
 // Define a type for the setting object
 interface WebSetting {
@@ -17,6 +18,7 @@ interface WebSetting {
 
 export default function Header() {
   const router = useRouter();
+  const t = useTranslations('Header');
   const [cartCount, setCartCount] = useState(0);
   const [logoUrl, setLogoUrl] = useState('/image/logo.png');
   const [themeColor, setThemeColor] = useState('#14b8a6'); // Fallback color
@@ -108,7 +110,7 @@ export default function Header() {
                   onClick={() => router.push('/cart')}
                 >
                   <ShoppingCart className="h-4 w-4 mr-1.5" />
-                  Cart
+                  {t('cart_short')}
                   {cartCount > 0 && (
                     <Badge className="ml-1 h-5 min-w-5 rounded-full px-1 font-mono tabular-nums flex items-center justify-center" variant="destructive">
                       {cartCount}
