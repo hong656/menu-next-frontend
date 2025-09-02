@@ -24,12 +24,11 @@ export default function CartPage() {
   const t = useTranslations('Header');
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [total, setTotal] = useState(0);
-  const [remark, setRemark] = useState(""); // State for the remark/notes
-  const [isPlacingOrder, setIsPlacingOrder] = useState(false); // Loading state
-  const [orderError, setOrderError] = useState<string | null>(null); // Error state
+  const [remark, setRemark] = useState("");
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [orderError, setOrderError] = useState<string | null>(null);
   const [isOrderPlacedDialogOpen, setIsOrderPlacedDialogOpen] = useState(false);
 
-  // Load cart from localStorage
   useEffect(() => {
     const savedCart = localStorage.getItem('restaurant-cart');
     if (savedCart) {
@@ -189,12 +188,12 @@ export default function CartPage() {
               <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto mb-4 flex items-center justify-center">
                 <ShoppingCart className="h-8 w-8 text-gray-400" />
               </div>
-              <p className="text-gray-500 text-lg">Your cart is empty</p>
-              <Button 
+              <p className="text-gray-500 text-lg">{t('cart_empty')}</p>
+              <Button
                 onClick={() => router.push('/screen')}
                 className="mt-4 bg-[var(--main-theme)] hover:bg-[var(--main-theme)]/90 text-white"
               >
-                Browse Menu
+                {t('browse')}
               </Button>
             </div>
           ) : (
