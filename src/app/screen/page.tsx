@@ -196,8 +196,8 @@ const formatApiMenuItems = (items: ApiMenuItem[], locale: string, apiUrl: string
 };
 
 export function MenuScreen() {
-
     const locale = useLocale();
+    const t = useTranslations('Header');
     const [activeCategory, setActiveCategory] = useState("All");
     const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
@@ -358,7 +358,7 @@ export function MenuScreen() {
               <div className="sticky top-0 z-20 bg-gray-50 pt-4 pb-2">
                 <div className="relative mb-2">
                   <Input
-                    placeholder="Search Menu"
+                    placeholder={t('search')}
                     className="h-11 bg-white border-gray-300 rounded-3xl"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}

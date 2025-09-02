@@ -1,6 +1,9 @@
 {
     "Header": {
         "cart": "Cart",
-        "cart_short": "Cart"
+        "cart_short": "Cart",
+        "search": "Search Menu",
+        "cart_empty": "Your cart is empty",
+        "browse": "Browse Menu"
     }
 }

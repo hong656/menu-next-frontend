@@ -1,6 +1,9 @@
 {
     "Header": {
         "cart": "购物车",
-        "cart_short": "购物车"
+        "cart_short": "购物车",
+        "search": "搜索菜单",
+        "cart_empty": "您的购物车是空的",
+        "browse": "浏览菜单"
     }
 }
